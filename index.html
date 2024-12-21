@@ -1,0 +1,1766 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <meta name="viewport" content="initial-scale=1,user-scalable=no,maximum-scale=1,width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <link rel="stylesheet" href="css/leaflet.css">
+        <link rel="stylesheet" href="css/L.Control.Layers.Tree.css">
+        <link rel="stylesheet" href="css/L.Control.Locate.min.css">
+        <link rel="stylesheet" href="css/qgis2web.css">
+        <link rel="stylesheet" href="css/fontawesome-all.min.css">
+        <link rel="stylesheet" href="css/filter.css">
+<link rel="stylesheet" href="css/nouislider.min.css">
+        <link rel="stylesheet" href="css/leaflet-control-geocoder.Geocoder.css">
+        <link rel="stylesheet" href="css/leaflet-measure.css">
+        <style>
+        html, body, #map {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+        }
+        </style>
+        <title>Paisagismo no Campus: Inventário Arbóreo</title>
+    </head>
+    <body>
+        <div id="map">
+        </div>
+        <script src="js/qgis2web_expressions.js"></script>
+        <script src="js/leaflet.js"></script>
+        <script src="js/L.Control.Layers.Tree.min.js"></script>
+        <script src="js/L.Control.Locate.min.js"></script>
+        <script src="js/leaflet.rotatedMarker.js"></script>
+        <script src="js/leaflet.pattern.js"></script>
+        <script src="js/leaflet-hash.js"></script>
+        <script src="js/Autolinker.min.js"></script>
+        <script src="js/rbush.min.js"></script>
+        <script src="js/labelgun.min.js"></script>
+        <script src="js/labels.js"></script>
+        <script src="js/leaflet-control-geocoder.Geocoder.js"></script>
+        <script src="js/leaflet-measure.js"></script>
+        <script src="js/tailDT.js"></script>
+<script src="js/nouislider.min.js"></script>
+<script src="js/wNumb.js"></script>
+        <script src="data/Mudas_Campus_1.js"></script>
+        <script>
+        var highlightLayer;
+        function highlightFeature(e) {
+            highlightLayer = e.target;
+
+            if (e.target.feature.geometry.type === 'LineString' || e.target.feature.geometry.type === 'MultiLineString') {
+              highlightLayer.setStyle({
+                color: '#ffff00',
+              });
+            } else {
+              highlightLayer.setStyle({
+                fillColor: '#ffff00',
+                fillOpacity: 1
+              });
+            }
+        }
+        var map = L.map('map', {
+            zoomControl:false, maxZoom:28, minZoom:1
+        }).fitBounds([[-32.04162274705498,-52.090256009621],[-32.03974855532024,-52.087052440941285]]);
+        var hash = new L.Hash(map);
+        map.attributionControl.setPrefix('<a href="https://github.com/tomchadwin/qgis2web" target="_blank">qgis2web</a> &middot; <a href="https://leafletjs.com" title="A JS library for interactive maps">Leaflet</a> &middot; <a href="https://qgis.org">QGIS</a>');
+        var autolinker = new Autolinker({truncate: {length: 30, location: 'smart'}});
+        // remove popup's row if "visible-with-data"
+        function removeEmptyRowsFromPopupContent(content, feature) {
+         var tempDiv = document.createElement('div');
+         tempDiv.innerHTML = content;
+         var rows = tempDiv.querySelectorAll('tr');
+         for (var i = 0; i < rows.length; i++) {
+             var td = rows[i].querySelector('td.visible-with-data');
+             var key = td ? td.id : '';
+             if (td && td.classList.contains('visible-with-data') && feature.properties[key] == null) {
+                 rows[i].parentNode.removeChild(rows[i]);
+             }
+         }
+         return tempDiv.innerHTML;
+        }
+        // add class to format popup if it contains media
+		function addClassToPopupIfMedia(content, popup) {
+			var tempDiv = document.createElement('div');
+			tempDiv.innerHTML = content;
+			if (tempDiv.querySelector('td img')) {
+				popup._contentNode.classList.add('media');
+					// Delay to force the redraw
+					setTimeout(function() {
+						popup.update();
+					}, 10);
+			} else {
+				popup._contentNode.classList.remove('media');
+			}
+		}
+        var title = new L.Control({'position':'topleft'});
+        title.onAdd = function (map) {
+            this._div = L.DomUtil.create('div', 'info');
+            this.update();
+            return this._div;
+        };
+        title.update = function () {
+            this._div.innerHTML = '<h2>Paisagismo no Campus: Inventário Arbóreo</h2>';
+        };
+        title.addTo(map);
+        var zoomControl = L.control.zoom({
+            position: 'topleft'
+        }).addTo(map);
+        L.control.locate({locateOptions: {maxZoom: 19}}).addTo(map);
+        var measureControl = new L.Control.Measure({
+            position: 'topleft',
+            primaryLengthUnit: 'meters',
+            secondaryLengthUnit: 'kilometers',
+            primaryAreaUnit: 'sqmeters',
+            secondaryAreaUnit: 'hectares'
+        });
+        measureControl.addTo(map);
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].innerHTML = '';
+        document.getElementsByClassName('leaflet-control-measure-toggle')[0].className += ' fas fa-ruler';
+        var bounds_group = new L.featureGroup([]);
+        function setBounds() {
+        }
+        map.createPane('pane_googlesatelites_0');
+        map.getPane('pane_googlesatelites_0').style.zIndex = 400;
+        var layer_googlesatelites_0 = L.tileLayer('http://mt0.google.com/vt/lyrs=s&hl=en&x={x}&y={y}&z={z}', {
+            pane: 'pane_googlesatelites_0',
+            opacity: 1.0,
+            attribution: '',
+            minZoom: 1,
+            maxZoom: 28,
+            minNativeZoom: 0,
+            maxNativeZoom: 19
+        });
+        layer_googlesatelites_0;
+        map.addLayer(layer_googlesatelites_0);
+        function pop_Mudas_Campus_1(feature, layer) {
+            layer.on({
+                mouseout: function(e) {
+                    for (var i in e.target._eventParents) {
+                        if (typeof e.target._eventParents[i].resetStyle === 'function') {
+                            e.target._eventParents[i].resetStyle(e.target);
+                        }
+                    }
+                },
+                mouseover: highlightFeature,
+            });
+            var popupContent = '<table>\
+                    <tr>\
+                        <td colspan="2"><strong>ID</strong><br />' + (feature.properties['ID'] !== null ? autolinker.link(feature.properties['ID'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Nome vulgar</strong><br />' + (feature.properties['Nome vulgar'] !== null ? autolinker.link(feature.properties['Nome vulgar'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Nome científico</strong><br />' + (feature.properties['Nome científico'] !== null ? autolinker.link(feature.properties['Nome científico'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Família</strong><br />' + (feature.properties['Família'] !== null ? autolinker.link(feature.properties['Família'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Idade</th>\
+                        <td>' + (feature.properties['Idade'] !== null ? autolinker.link(feature.properties['Idade'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Ciclo de vida</th>\
+                        <td>' + (feature.properties['Ciclo de vida'] !== null ? autolinker.link(feature.properties['Ciclo de vida'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tipo de folhagem</th>\
+                        <td>' + (feature.properties['Tipo de folhagem'] !== null ? autolinker.link(feature.properties['Tipo de folhagem'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Tipo de copa</th>\
+                        <td>' + (feature.properties['Tipo de copa'] !== null ? autolinker.link(feature.properties['Tipo de copa'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Diâmetro da copa</th>\
+                        <td>' + (feature.properties['Diâmetro da copa'] !== null ? autolinker.link(feature.properties['Diâmetro da copa'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Raízes superficiais</th>\
+                        <td>' + (feature.properties['Raízes superficiais'] !== null ? autolinker.link(feature.properties['Raízes superficiais'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Raízes causam dano</th>\
+                        <td>' + (feature.properties['Raízes causam dano'] !== null ? autolinker.link(feature.properties['Raízes causam dano'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Altura estimada</th>\
+                        <td>' + (feature.properties['Altura estimada'] !== null ? autolinker.link(feature.properties['Altura estimada'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Presença de flor</strong><br />' + (feature.properties['Presença de flor'] !== null ? autolinker.link(feature.properties['Presença de flor'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Época de floração</strong><br />' + (feature.properties['Época de floração'] !== null ? autolinker.link(feature.properties['Época de floração'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Presença de fruto</strong><br />' + (feature.properties['Presença de fruto'] !== null ? autolinker.link(feature.properties['Presença de fruto'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Presença de fruto carnoso</strong><br />' + (feature.properties['Presença de fruto carnoso'] !== null ? autolinker.link(feature.properties['Presença de fruto carnoso'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Época de frutificação</strong><br />' + (feature.properties['Época de frutificação'] !== null ? autolinker.link(feature.properties['Época de frutificação'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Diâmetro do tronco</th>\
+                        <td>' + (feature.properties['Diâmetro do tronco'] !== null ? autolinker.link(feature.properties['Diâmetro do tronco'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <td colspan="2"><strong>Necessita poda</strong><br />' + (feature.properties['Necessita poda'] !== null ? autolinker.link(feature.properties['Necessita poda'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Estado de conservação</th>\
+                        <td>' + (feature.properties['Estado de conservação'] !== null ? autolinker.link(feature.properties['Estado de conservação'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Origem da espécie</th>\
+                        <td>' + (feature.properties['Origem da espécie'] !== null ? autolinker.link(feature.properties['Origem da espécie'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Presença de fiação</th>\
+                        <td>' + (feature.properties['Presença de fiação'] !== null ? autolinker.link(feature.properties['Presença de fiação'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Presença de sinalização</th>\
+                        <td>' + (feature.properties['Presença de sinalização'] !== null ? autolinker.link(feature.properties['Presença de sinalização'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Proximidade de estrutura hidrossanitária</th>\
+                        <td>' + (feature.properties['Proximidade de estrutura hidrossanitária'] !== null ? autolinker.link(feature.properties['Proximidade de estrutura hidrossanitária'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Situação fitossanitária</th>\
+                        <td>' + (feature.properties['Situação fitossanitária'] !== null ? autolinker.link(feature.properties['Situação fitossanitária'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Observações</th>\
+                        <td>' + (feature.properties['Observações'] !== null ? autolinker.link(feature.properties['Observações'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                    <tr>\
+                        <th scope="row">Manejo proposto</th>\
+                        <td>' + (feature.properties['Manejo proposto'] !== null ? autolinker.link(feature.properties['Manejo proposto'].toLocaleString()) : '') + '</td>\
+                    </tr>\
+                </table>';
+            var content = removeEmptyRowsFromPopupContent(popupContent, feature);
+			layer.on('popupopen', function(e) {
+				addClassToPopupIfMedia(content, e.popup);
+			});
+			layer.bindPopup(content, { maxHeight: 400 });
+        }
+
+        function style_Mudas_Campus_1_0(feature) {
+            switch(String(feature.properties['Nome vulgar'])) {
+                case 'Abacateiro':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(215,93,99,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Abiu roxo':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(14,181,227,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Agave Diferenciada':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(85,43,222,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Agave Dragão':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(42,55,200,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Amoreira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(211,89,108,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Amoreira Branca':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(156,234,119,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Araçá':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(132,79,201,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Aroeira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(107,212,160,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Azaleia':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(190,87,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Begonia':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(237,19,164,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Bergamoteira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(193,128,217,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Butiá':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(218,67,135,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Buxus':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(188,201,41,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Camélia':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(122,181,208,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Caramboleira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(202,53,45,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cerejeira Japonesa':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,73,112,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Chefera-pequena':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(239,130,214,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Chuva de Ouro':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(229,113,18,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cinamomo':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(203,64,40,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Cipreste':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(61,189,206,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Coroa-de-Cristo':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(97,170,222,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Costela de Adão':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(54,231,160,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Crotons':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(127,234,51,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Dracena Verde':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(231,61,154,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Dracena Vermelha':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(124,179,238,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Espirradeira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(66,216,126,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Falsa Seringueira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(39,219,183,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Falso-barbatimão':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(159,69,211,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Figueira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(101,204,101,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Flamboyant':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(173,216,103,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Formio Verde':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(239,72,233,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Goiabeira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(16,13,209,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Hibisco':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(133,233,122,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Hortênsia':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(22,215,61,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Jacarandá-mimoso':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,97,22,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Jambolão':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(95,41,202,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Laranjeira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(225,106,233,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Ligustro':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(109,206,138,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Lima da Pérsia':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(235,14,206,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Limoeiro':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(167,216,44,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Mamoeiro':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(158,85,222,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Manacá-da-serra':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(240,146,179,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Manga':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(86,120,208,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Nespereira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(209,206,39,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Orelha de Elefante':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(199,230,59,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Orquídea-bambu':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(73,54,210,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Paineira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(200,62,16,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Palmeira Fênix':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(50,80,213,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Palmeira Real':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,189,136,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pessegueiro':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(29,215,196,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pinheiro-budista':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(63,204,206,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pinus':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(211,192,50,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Pitangueira':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(178,230,123,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Salgueiro-chorão':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(232,181,72,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Tibouchina':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(140,236,207,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Yucca':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(238,193,28,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Yucca Gloriosa Variegata':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(131,237,142,1.0)',
+                interactive: true,
+            }
+                    break;
+                case 'Yucca Variegata':
+                    return {
+                pane: 'pane_Mudas_Campus_1',
+                radius: 4.0,
+                opacity: 1,
+                color: 'rgba(35,35,35,1.0)',
+                dashArray: '',
+                lineCap: 'butt',
+                lineJoin: 'miter',
+                weight: 1,
+                fill: true,
+                fillOpacity: 1,
+                fillColor: 'rgba(130,233,104,1.0)',
+                interactive: true,
+            }
+                    break;
+            }
+        }
+        map.createPane('pane_Mudas_Campus_1');
+        map.getPane('pane_Mudas_Campus_1').style.zIndex = 401;
+        map.getPane('pane_Mudas_Campus_1').style['mix-blend-mode'] = 'normal';
+        var layer_Mudas_Campus_1 = new L.geoJson(json_Mudas_Campus_1, {
+            attribution: '',
+            interactive: true,
+            dataVar: 'json_Mudas_Campus_1',
+            layerName: 'layer_Mudas_Campus_1',
+            pane: 'pane_Mudas_Campus_1',
+            onEachFeature: pop_Mudas_Campus_1,
+            pointToLayer: function (feature, latlng) {
+                var context = {
+                    feature: feature,
+                    variables: {}
+                };
+                return L.circleMarker(latlng, style_Mudas_Campus_1_0(feature));
+            },
+        });
+        bounds_group.addLayer(layer_Mudas_Campus_1);
+        map.addLayer(layer_Mudas_Campus_1);
+        var osmGeocoder = new L.Control.Geocoder({
+            collapsed: true,
+            position: 'topleft',
+            text: 'Search',
+            title: 'Testing'
+        }).addTo(map);
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .className += ' fa fa-search';
+        document.getElementsByClassName('leaflet-control-geocoder-icon')[0]
+        .title += 'Search for a place';
+        var overlaysTree = [
+        {label: '<b>Arbóreo_Final</b>', selectAllCheckbox: true, children: [
+            {label: 'Mudas_Campus<br /><table><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Abacateiro0.png" /></td><td>Abacateiro</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Abiuroxo1.png" /></td><td>Abiu roxo</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_AgaveDiferenciada2.png" /></td><td>Agave Diferenciada</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_AgaveDragão3.png" /></td><td>Agave Dragão</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Amoreira4.png" /></td><td>Amoreira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_AmoreiraBranca5.png" /></td><td>Amoreira Branca</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Araçá6.png" /></td><td>Araçá</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Aroeira7.png" /></td><td>Aroeira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Azaleia8.png" /></td><td>Azaleia</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Begonia9.png" /></td><td>Begonia</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Bergamoteira10.png" /></td><td>Bergamoteira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Butiá11.png" /></td><td>Butiá</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Buxus12.png" /></td><td>Buxus</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Camélia13.png" /></td><td>Camélia</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Caramboleira14.png" /></td><td>Caramboleira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_CerejeiraJaponesa15.png" /></td><td>Cerejeira Japonesa</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Cheferapequena16.png" /></td><td>Chefera-pequena</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_ChuvadeOuro17.png" /></td><td>Chuva de Ouro</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Cinamomo18.png" /></td><td>Cinamomo</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Cipreste19.png" /></td><td>Cipreste</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_CoroadeCristo20.png" /></td><td>Coroa-de-Cristo</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_CosteladeAdão21.png" /></td><td>Costela de Adão</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Crotons22.png" /></td><td>Crotons</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_DracenaVerde23.png" /></td><td>Dracena Verde</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_DracenaVermelha24.png" /></td><td>Dracena Vermelha</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Espirradeira25.png" /></td><td>Espirradeira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_FalsaSeringueira26.png" /></td><td>Falsa Seringueira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Falsobarbatimão27.png" /></td><td>Falso-barbatimão</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Figueira28.png" /></td><td>Figueira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Flamboyant29.png" /></td><td>Flamboyant</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_FormioVerde30.png" /></td><td>Formio Verde</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Goiabeira31.png" /></td><td>Goiabeira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Hibisco32.png" /></td><td>Hibisco</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Hortênsia33.png" /></td><td>Hortênsia</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Jacarandámimoso34.png" /></td><td>Jacarandá-mimoso</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Jambolão35.png" /></td><td>Jambolão</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Laranjeira36.png" /></td><td>Laranjeira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Ligustro37.png" /></td><td>Ligustro</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_LimadaPérsia38.png" /></td><td>Lima da Pérsia</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Limoeiro39.png" /></td><td>Limoeiro</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Mamoeiro40.png" /></td><td>Mamoeiro</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Manacádaserra41.png" /></td><td>Manacá-da-serra</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Manga42.png" /></td><td>Manga</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Nespereira43.png" /></td><td>Nespereira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_OrelhadeElefante44.png" /></td><td>Orelha de Elefante</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Orquídeabambu45.png" /></td><td>Orquídea-bambu</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Paineira46.png" /></td><td>Paineira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_PalmeiraFênix47.png" /></td><td>Palmeira Fênix</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_PalmeiraReal48.png" /></td><td>Palmeira Real</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Pessegueiro49.png" /></td><td>Pessegueiro</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Pinheirobudista50.png" /></td><td>Pinheiro-budista</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Pinus51.png" /></td><td>Pinus</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Pitangueira52.png" /></td><td>Pitangueira</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Salgueirochorão53.png" /></td><td>Salgueiro-chorão</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Tibouchina54.png" /></td><td>Tibouchina</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_Yucca55.png" /></td><td>Yucca</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_YuccaGloriosaVariegata56.png" /></td><td>Yucca Gloriosa Variegata</td></tr><tr><td style="text-align: center;"><img src="legend/Mudas_Campus_1_YuccaVariegata57.png" /></td><td>Yucca Variegata</td></tr></table>', layer: layer_Mudas_Campus_1},]},
+        {label: '<b>Mapa</b>', selectAllCheckbox: true, children: [
+            {label: "google satelites", layer: layer_googlesatelites_0, radioGroup: 'bm' },]},]
+        var lay = L.control.layers.tree(null, overlaysTree,{
+            //namedToggle: true,
+            //selectorBack: false,
+            //closedSymbol: '&#8862; &#x1f5c0;',
+            //openedSymbol: '&#8863; &#x1f5c1;',
+            //collapseAll: 'Collapse all',
+            //expandAll: 'Expand all',
+            collapsed: false, 
+        });
+        lay.addTo(map);
+		document.addEventListener("DOMContentLoaded", function() {
+            // set new Layers List height which considers toggle icon
+            function newLayersListHeight() {
+                var layerScrollbarElement = document.querySelector('.leaflet-control-layers-scrollbar');
+                if (layerScrollbarElement) {
+                    var layersListElement = document.querySelector('.leaflet-control-layers-list');
+                    var originalHeight = layersListElement.style.height 
+                        || window.getComputedStyle(layersListElement).height;
+                    var newHeight = parseFloat(originalHeight) - 50;
+                    layersListElement.style.height = newHeight + 'px';
+                }
+            }
+            var isLayersListExpanded = true;
+            var controlLayersElement = document.querySelector('.leaflet-control-layers');
+            var toggleLayerControl = document.querySelector('.leaflet-control-layers-toggle');
+            // toggle Collapsed/Expanded and apply new Layers List height
+            toggleLayerControl.addEventListener('click', function() {
+                if (isLayersListExpanded) {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                } else {
+                    controlLayersElement.classList.add('leaflet-control-layers-expanded');
+                }
+                isLayersListExpanded = !isLayersListExpanded;
+                newLayersListHeight()
+            });	
+			// apply new Layers List height if toggle layerstree
+			if (controlLayersElement) {
+				controlLayersElement.addEventListener('click', function(event) {
+					var toggleLayerHeaderPointer = event.target.closest('.leaflet-layerstree-header-pointer span');
+					if (toggleLayerHeaderPointer) {
+						newLayersListHeight();
+					}
+				});
+			}
+            // Collapsed/Expanded at Start to apply new height
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            setTimeout(function() {
+                toggleLayerControl.click();
+            }, 10);
+            // Collapsed touch/small screen
+            var isSmallScreen = window.innerWidth < 650;
+            if (isSmallScreen) {
+                setTimeout(function() {
+                    controlLayersElement.classList.remove('leaflet-control-layers-expanded');
+                    isLayersListExpanded = !isLayersListExpanded;
+                }, 500);
+            }  
+        });       
+        setBounds();
+        var mapDiv = document.getElementById('map');
+        var row = document.createElement('div');
+        row.className="row";
+        row.id="all";
+        row.style.height = "100%";
+        var col1 = document.createElement('div');
+        col1.className="col9";
+        col1.id = "mapWindow";
+        col1.style.height = "99%";
+        col1.style.width = "80%";
+        col1.style.display = "inline-block";
+        var col2 = document.createElement('div');
+        col2.className="col3";
+        col2.id = "menu";
+        col2.style.display = "inline-block";
+        mapDiv.parentNode.insertBefore(row, mapDiv);
+        document.getElementById("all").appendChild(col1);
+        document.getElementById("all").appendChild(col2);
+        col1.appendChild(mapDiv)
+        var Filters = {"Nome vulgar": "str","Presença de fruto": "str","Presença de fruto carnoso": "str","Época de frutificação": "str","Presença de flor": "str","Época de floração": "str","Necessita poda": "str","Manejo proposto": "str"};
+        function filterFunc() {
+          map.eachLayer(function(lyr){
+          if ("options" in lyr && "dataVar" in lyr["options"]){
+            features = this[lyr["options"]["dataVar"]].features.slice(0);
+            try{
+              for (key in Filters){
+                keyS = key.replace(/[^a-zA-Z0-9_]/g, "")
+                if (Filters[key] == "str" || Filters[key] == "bool"){
+                  var selection = [];
+                  var options = document.getElementById("sel_" + keyS).options
+                  for (var i=0; i < options.length; i++) {
+                    if (options[i].selected) selection.push(options[i].value);
+                  }
+                    try{
+                      if (key in features[0].properties){
+                        for (i = features.length - 1;
+                          i >= 0; --i){
+                          if (selection.indexOf(
+                          features[i].properties[key])<0
+                          && selection.length>0) {
+                          features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                  }
+                }
+                if (Filters[key] == "int"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (parseInt(features[i].properties[key])
+                          < sliderVals[0]
+                          || parseInt(features[i].properties[key])
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "real"){
+                  sliderVals =  document.getElementById(
+                    "div_" + keyS).noUiSlider.get();
+                  try{
+                    if (key in features[0].properties){
+                    for (i = features.length - 1; i >= 0; --i){
+                      if (features[i].properties[key]
+                          < sliderVals[0]
+                          || features[i].properties[key]
+                          > sliderVals[1]){
+                            features.splice(i,1);
+                          }
+                        }
+                      }
+                    } catch(err){
+                    }
+                  }
+                if (Filters[key] == "date"
+                  || Filters[key] == "datetime"
+                  || Filters[key] == "time"){
+                  try{
+                    if (key in features[0].properties){
+                      HTMLkey = key.replace(/[&\/\\#,+()$~%.'":*?<>{} ]/g, '');
+                      startdate = document.getElementById("dat_" +
+                        HTMLkey + "_date1").value.replace(" ", "T");
+                      enddate = document.getElementById("dat_" +
+                        HTMLkey + "_date2").value.replace(" ", "T");
+                      for (i = features.length - 1; i >= 0; --i){
+                        if (features[i].properties[key] < startdate
+                          || features[i].properties[key] > enddate){
+                          features.splice(i,1);
+                        }
+                      }
+                    }
+                  } catch(err){
+                  }
+                }
+              }
+            } catch(err){
+            }
+          this[lyr["options"]["layerName"]].clearLayers();
+          this[lyr["options"]["layerName"]].addData(features);
+          }
+          })
+        }
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Nomevulgar = document.createElement('div');
+            div_Nomevulgar.id = "div_Nomevulgar";
+            div_Nomevulgar.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Nomevulgar);
+            sel_Nomevulgar = document.createElement('select');
+            sel_Nomevulgar.multiple = true;
+            sel_Nomevulgar.size = 10;
+            sel_Nomevulgar.id = "sel_Nomevulgar";
+            var Nomevulgar_options_str = "<option value='' unselected></option>";
+            sel_Nomevulgar.onchange = function(){filterFunc()};
+            Nomevulgar_options_str  += '<option value="Abacateiro">Abacateiro</option>';
+            Nomevulgar_options_str  += '<option value="Abiu roxo">Abiu roxo</option>';
+            Nomevulgar_options_str  += '<option value="Agave Diferenciada">Agave Diferenciada</option>';
+            Nomevulgar_options_str  += '<option value="Agave Dragão">Agave Dragão</option>';
+            Nomevulgar_options_str  += '<option value="Amoreira">Amoreira</option>';
+            Nomevulgar_options_str  += '<option value="Amoreira Branca">Amoreira Branca</option>';
+            Nomevulgar_options_str  += '<option value="Araçá">Araçá</option>';
+            Nomevulgar_options_str  += '<option value="Aroeira">Aroeira</option>';
+            Nomevulgar_options_str  += '<option value="Azaleia">Azaleia</option>';
+            Nomevulgar_options_str  += '<option value="Begonia">Begonia</option>';
+            Nomevulgar_options_str  += '<option value="Bergamoteira">Bergamoteira</option>';
+            Nomevulgar_options_str  += '<option value="Butiá">Butiá</option>';
+            Nomevulgar_options_str  += '<option value="Buxus">Buxus</option>';
+            Nomevulgar_options_str  += '<option value="Camélia">Camélia</option>';
+            Nomevulgar_options_str  += '<option value="Caramboleira">Caramboleira</option>';
+            Nomevulgar_options_str  += '<option value="Cerejeira Japonesa">Cerejeira Japonesa</option>';
+            Nomevulgar_options_str  += '<option value="Chefera-pequena">Chefera-pequena</option>';
+            Nomevulgar_options_str  += '<option value="Chuva de Ouro">Chuva de Ouro</option>';
+            Nomevulgar_options_str  += '<option value="Cinamomo">Cinamomo</option>';
+            Nomevulgar_options_str  += '<option value="Cipreste">Cipreste</option>';
+            Nomevulgar_options_str  += '<option value="Coroa-de-Cristo">Coroa-de-Cristo</option>';
+            Nomevulgar_options_str  += '<option value="Costela de Adão">Costela de Adão</option>';
+            Nomevulgar_options_str  += '<option value="Crotons">Crotons</option>';
+            Nomevulgar_options_str  += '<option value="Dracena Verde">Dracena Verde</option>';
+            Nomevulgar_options_str  += '<option value="Dracena Vermelha">Dracena Vermelha</option>';
+            Nomevulgar_options_str  += '<option value="Espirradeira">Espirradeira</option>';
+            Nomevulgar_options_str  += '<option value="Falsa Seringueira">Falsa Seringueira</option>';
+            Nomevulgar_options_str  += '<option value="Falso-barbatimão">Falso-barbatimão</option>';
+            Nomevulgar_options_str  += '<option value="Figueira">Figueira</option>';
+            Nomevulgar_options_str  += '<option value="Flamboyant">Flamboyant</option>';
+            Nomevulgar_options_str  += '<option value="Formio Verde">Formio Verde</option>';
+            Nomevulgar_options_str  += '<option value="Goiabeira">Goiabeira</option>';
+            Nomevulgar_options_str  += '<option value="Hibisco">Hibisco</option>';
+            Nomevulgar_options_str  += '<option value="Hortênsia">Hortênsia</option>';
+            Nomevulgar_options_str  += '<option value="Jacarandá-mimoso">Jacarandá-mimoso</option>';
+            Nomevulgar_options_str  += '<option value="Jambolão">Jambolão</option>';
+            Nomevulgar_options_str  += '<option value="Laranjeira">Laranjeira</option>';
+            Nomevulgar_options_str  += '<option value="Ligustro">Ligustro</option>';
+            Nomevulgar_options_str  += '<option value="Lima da Pérsia">Lima da Pérsia</option>';
+            Nomevulgar_options_str  += '<option value="Limoeiro">Limoeiro</option>';
+            Nomevulgar_options_str  += '<option value="Mamoeiro">Mamoeiro</option>';
+            Nomevulgar_options_str  += '<option value="Manacá-da-serra">Manacá-da-serra</option>';
+            Nomevulgar_options_str  += '<option value="Manga">Manga</option>';
+            Nomevulgar_options_str  += '<option value="Nespereira">Nespereira</option>';
+            Nomevulgar_options_str  += '<option value="Orelha de Elefante">Orelha de Elefante</option>';
+            Nomevulgar_options_str  += '<option value="Orquídea-bambu">Orquídea-bambu</option>';
+            Nomevulgar_options_str  += '<option value="Paineira">Paineira</option>';
+            Nomevulgar_options_str  += '<option value="Palmeira Fênix">Palmeira Fênix</option>';
+            Nomevulgar_options_str  += '<option value="Palmeira Real">Palmeira Real</option>';
+            Nomevulgar_options_str  += '<option value="Pessegueiro">Pessegueiro</option>';
+            Nomevulgar_options_str  += '<option value="Pinheiro-budista">Pinheiro-budista</option>';
+            Nomevulgar_options_str  += '<option value="Pinus">Pinus</option>';
+            Nomevulgar_options_str  += '<option value="Pitangueira">Pitangueira</option>';
+            Nomevulgar_options_str  += '<option value="Salgueiro-chorão">Salgueiro-chorão</option>';
+            Nomevulgar_options_str  += '<option value="Tibouchina">Tibouchina</option>';
+            Nomevulgar_options_str  += '<option value="Yucca">Yucca</option>';
+            Nomevulgar_options_str  += '<option value="Yucca Gloriosa Variegata">Yucca Gloriosa Variegata</option>';
+            Nomevulgar_options_str  += '<option value="Yucca Variegata">Yucca Variegata</option>';
+            sel_Nomevulgar.innerHTML = Nomevulgar_options_str;
+            div_Nomevulgar.appendChild(sel_Nomevulgar);
+            var lab_Nomevulgar = document.createElement('div');
+            lab_Nomevulgar.innerHTML = 'Nome vulgar';
+            lab_Nomevulgar.className = 'filterlabel';
+            div_Nomevulgar.appendChild(lab_Nomevulgar);
+            var reset_Nomevulgar = document.createElement('div');
+            reset_Nomevulgar.innerHTML = 'clear filter';
+            reset_Nomevulgar.className = 'filterlabel';
+            reset_Nomevulgar.onclick = function() {
+                var options = document.getElementById("sel_Nomevulgar").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Nomevulgar.appendChild(reset_Nomevulgar);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Presenadefruto = document.createElement('div');
+            div_Presenadefruto.id = "div_Presenadefruto";
+            div_Presenadefruto.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Presenadefruto);
+            sel_Presenadefruto = document.createElement('select');
+            sel_Presenadefruto.multiple = true;
+            sel_Presenadefruto.size = 3;
+            sel_Presenadefruto.id = "sel_Presenadefruto";
+            var Presenadefruto_options_str = "<option value='' unselected></option>";
+            sel_Presenadefruto.onchange = function(){filterFunc()};
+            Presenadefruto_options_str  += '<option value="NULL">NULL</option>';
+            Presenadefruto_options_str  += '<option value="Não">Não</option>';
+            Presenadefruto_options_str  += '<option value="Sim">Sim</option>';
+            sel_Presenadefruto.innerHTML = Presenadefruto_options_str;
+            div_Presenadefruto.appendChild(sel_Presenadefruto);
+            var lab_Presenadefruto = document.createElement('div');
+            lab_Presenadefruto.innerHTML = 'Presença de fruto';
+            lab_Presenadefruto.className = 'filterlabel';
+            div_Presenadefruto.appendChild(lab_Presenadefruto);
+            var reset_Presenadefruto = document.createElement('div');
+            reset_Presenadefruto.innerHTML = 'clear filter';
+            reset_Presenadefruto.className = 'filterlabel';
+            reset_Presenadefruto.onclick = function() {
+                var options = document.getElementById("sel_Presenadefruto").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Presenadefruto.appendChild(reset_Presenadefruto);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Presenadefrutocarnoso = document.createElement('div');
+            div_Presenadefrutocarnoso.id = "div_Presenadefrutocarnoso";
+            div_Presenadefrutocarnoso.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Presenadefrutocarnoso);
+            sel_Presenadefrutocarnoso = document.createElement('select');
+            sel_Presenadefrutocarnoso.multiple = true;
+            sel_Presenadefrutocarnoso.size = 4;
+            sel_Presenadefrutocarnoso.id = "sel_Presenadefrutocarnoso";
+            var Presenadefrutocarnoso_options_str = "<option value='' unselected></option>";
+            sel_Presenadefrutocarnoso.onchange = function(){filterFunc()};
+            Presenadefrutocarnoso_options_str  += '<option value="NULL">NULL</option>';
+            Presenadefrutocarnoso_options_str  += '<option value="N/A">N/A</option>';
+            Presenadefrutocarnoso_options_str  += '<option value="Não">Não</option>';
+            Presenadefrutocarnoso_options_str  += '<option value="Sim">Sim</option>';
+            sel_Presenadefrutocarnoso.innerHTML = Presenadefrutocarnoso_options_str;
+            div_Presenadefrutocarnoso.appendChild(sel_Presenadefrutocarnoso);
+            var lab_Presenadefrutocarnoso = document.createElement('div');
+            lab_Presenadefrutocarnoso.innerHTML = 'Presença de fruto carnoso';
+            lab_Presenadefrutocarnoso.className = 'filterlabel';
+            div_Presenadefrutocarnoso.appendChild(lab_Presenadefrutocarnoso);
+            var reset_Presenadefrutocarnoso = document.createElement('div');
+            reset_Presenadefrutocarnoso.innerHTML = 'clear filter';
+            reset_Presenadefrutocarnoso.className = 'filterlabel';
+            reset_Presenadefrutocarnoso.onclick = function() {
+                var options = document.getElementById("sel_Presenadefrutocarnoso").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Presenadefrutocarnoso.appendChild(reset_Presenadefrutocarnoso);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_pocadefrutificao = document.createElement('div');
+            div_pocadefrutificao.id = "div_pocadefrutificao";
+            div_pocadefrutificao.className= "filterselect";
+            document.getElementById("menu").appendChild(div_pocadefrutificao);
+            sel_pocadefrutificao = document.createElement('select');
+            sel_pocadefrutificao.multiple = true;
+            sel_pocadefrutificao.size = 10;
+            sel_pocadefrutificao.id = "sel_pocadefrutificao";
+            var pocadefrutificao_options_str = "<option value='' unselected></option>";
+            sel_pocadefrutificao.onchange = function(){filterFunc()};
+            pocadefrutificao_options_str  += '<option value="NULL">NULL</option>';
+            pocadefrutificao_options_str  += '<option value="Abril a agosto">Abril a agosto</option>';
+            pocadefrutificao_options_str  += '<option value="Agosto">Agosto</option>';
+            pocadefrutificao_options_str  += '<option value="Agosto a novembro">Agosto a novembro</option>';
+            pocadefrutificao_options_str  += '<option value="Agosto a setembro">Agosto a setembro</option>';
+            pocadefrutificao_options_str  += '<option value="Ano todo">Ano todo</option>';
+            pocadefrutificao_options_str  += '<option value="Dezembro a março">Dezembro a março</option>';
+            pocadefrutificao_options_str  += '<option value="Fevereiro a março">Fevereiro a março</option>';
+            pocadefrutificao_options_str  += '<option value="Fevereiro a setembro">Fevereiro a setembro</option>';
+            pocadefrutificao_options_str  += '<option value="Fevereiro e maio">Fevereiro e maio</option>';
+            pocadefrutificao_options_str  += '<option value="Janeiro a Março">Janeiro a Março</option>';
+            pocadefrutificao_options_str  += '<option value="Julho a dezembro">Julho a dezembro</option>';
+            pocadefrutificao_options_str  += '<option value="Junho">Junho</option>';
+            pocadefrutificao_options_str  += '<option value="Junho a Julho">Junho a Julho</option>';
+            pocadefrutificao_options_str  += '<option value="Junho a setembro">Junho a setembro</option>';
+            pocadefrutificao_options_str  += '<option value="Maio a outubro">Maio a outubro</option>';
+            pocadefrutificao_options_str  += '<option value="Maio e agosto">Maio e agosto</option>';
+            pocadefrutificao_options_str  += '<option value="Março">Março</option>';
+            pocadefrutificao_options_str  += '<option value="Março a abril">Março a abril</option>';
+            pocadefrutificao_options_str  += '<option value="Março a dezembro">Março a dezembro</option>';
+            pocadefrutificao_options_str  += '<option value="Março a junho">Março a junho</option>';
+            pocadefrutificao_options_str  += '<option value="Março e agosto">Março e agosto</option>';
+            pocadefrutificao_options_str  += '<option value="Novembro a janeiro">Novembro a janeiro</option>';
+            pocadefrutificao_options_str  += '<option value="Não">Não</option>';
+            pocadefrutificao_options_str  += '<option value="Outono">Outono</option>';
+            pocadefrutificao_options_str  += '<option value="Outubro a novembro">Outubro a novembro</option>';
+            pocadefrutificao_options_str  += '<option value="Setembro">Setembro</option>';
+            pocadefrutificao_options_str  += '<option value="Setembro a março">Setembro a março</option>';
+            pocadefrutificao_options_str  += '<option value="Setembro a novembro">Setembro a novembro</option>';
+            pocadefrutificao_options_str  += '<option value="Setembro a outubro">Setembro a outubro</option>';
+            sel_pocadefrutificao.innerHTML = pocadefrutificao_options_str;
+            div_pocadefrutificao.appendChild(sel_pocadefrutificao);
+            var lab_pocadefrutificao = document.createElement('div');
+            lab_pocadefrutificao.innerHTML = 'Época de frutificação';
+            lab_pocadefrutificao.className = 'filterlabel';
+            div_pocadefrutificao.appendChild(lab_pocadefrutificao);
+            var reset_pocadefrutificao = document.createElement('div');
+            reset_pocadefrutificao.innerHTML = 'clear filter';
+            reset_pocadefrutificao.className = 'filterlabel';
+            reset_pocadefrutificao.onclick = function() {
+                var options = document.getElementById("sel_pocadefrutificao").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_pocadefrutificao.appendChild(reset_pocadefrutificao);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Presenadeflor = document.createElement('div');
+            div_Presenadeflor.id = "div_Presenadeflor";
+            div_Presenadeflor.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Presenadeflor);
+            sel_Presenadeflor = document.createElement('select');
+            sel_Presenadeflor.multiple = true;
+            sel_Presenadeflor.size = 3;
+            sel_Presenadeflor.id = "sel_Presenadeflor";
+            var Presenadeflor_options_str = "<option value='' unselected></option>";
+            sel_Presenadeflor.onchange = function(){filterFunc()};
+            Presenadeflor_options_str  += '<option value="NULL">NULL</option>';
+            Presenadeflor_options_str  += '<option value="Não">Não</option>';
+            Presenadeflor_options_str  += '<option value="Sim">Sim</option>';
+            sel_Presenadeflor.innerHTML = Presenadeflor_options_str;
+            div_Presenadeflor.appendChild(sel_Presenadeflor);
+            var lab_Presenadeflor = document.createElement('div');
+            lab_Presenadeflor.innerHTML = 'Presença de flor';
+            lab_Presenadeflor.className = 'filterlabel';
+            div_Presenadeflor.appendChild(lab_Presenadeflor);
+            var reset_Presenadeflor = document.createElement('div');
+            reset_Presenadeflor.innerHTML = 'clear filter';
+            reset_Presenadeflor.className = 'filterlabel';
+            reset_Presenadeflor.onclick = function() {
+                var options = document.getElementById("sel_Presenadeflor").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Presenadeflor.appendChild(reset_Presenadeflor);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_pocadeflorao = document.createElement('div');
+            div_pocadeflorao.id = "div_pocadeflorao";
+            div_pocadeflorao.className= "filterselect";
+            document.getElementById("menu").appendChild(div_pocadeflorao);
+            sel_pocadeflorao = document.createElement('select');
+            sel_pocadeflorao.multiple = true;
+            sel_pocadeflorao.size = 10;
+            sel_pocadeflorao.id = "sel_pocadeflorao";
+            var pocadeflorao_options_str = "<option value='' unselected></option>";
+            sel_pocadeflorao.onchange = function(){filterFunc()};
+            pocadeflorao_options_str  += '<option value="NULL">NULL</option>';
+            pocadeflorao_options_str  += '<option value="1 vez adulta e no fim da vida">1 vez adulta e no fim da vida</option>';
+            pocadeflorao_options_str  += '<option value="Abril">Abril</option>';
+            pocadeflorao_options_str  += '<option value="Abril a maio">Abril a maio</option>';
+            pocadeflorao_options_str  += '<option value="Agosto a novembro">Agosto a novembro</option>';
+            pocadeflorao_options_str  += '<option value="Ano todo">Ano todo</option>';
+            pocadeflorao_options_str  += '<option value="Dezembro a abril">Dezembro a abril</option>';
+            pocadeflorao_options_str  += '<option value="Dezembro a março">Dezembro a março</option>';
+            pocadeflorao_options_str  += '<option value="Dezembro e fevereiro">Dezembro e fevereiro</option>';
+            pocadeflorao_options_str  += '<option value="Feminina: ano inteiro. Masculina: agosto a janeiro">Feminina: ano inteiro. Masculina: agosto a janeiro</option>';
+            pocadeflorao_options_str  += '<option value="Fevereiro">Fevereiro</option>';
+            pocadeflorao_options_str  += '<option value="Fevereiro a maio">Fevereiro a maio</option>';
+            pocadeflorao_options_str  += '<option value="Fevereiro a março">Fevereiro a março</option>';
+            pocadeflorao_options_str  += '<option value="Julho a setembro">Julho a setembro</option>';
+            pocadeflorao_options_str  += '<option value="Junho a dezembro">Junho a dezembro</option>';
+            pocadeflorao_options_str  += '<option value="Junho a setembro">Junho a setembro</option>';
+            pocadeflorao_options_str  += '<option value="Maio e julho">Maio e julho</option>';
+            pocadeflorao_options_str  += '<option value="Maio e junho">Maio e junho</option>';
+            pocadeflorao_options_str  += '<option value="Março">Março</option>';
+            pocadeflorao_options_str  += '<option value="Março a setembro">Março a setembro</option>';
+            pocadeflorao_options_str  += '<option value="Março e maio">Março e maio</option>';
+            pocadeflorao_options_str  += '<option value="N/A">N/A</option>';
+            pocadeflorao_options_str  += '<option value="Novembro a dezembro">Novembro a dezembro</option>';
+            pocadeflorao_options_str  += '<option value="Novembro a janeiro">Novembro a janeiro</option>';
+            pocadeflorao_options_str  += '<option value="Novembro a março">Novembro a março</option>';
+            pocadeflorao_options_str  += '<option value="Não">Não</option>';
+            pocadeflorao_options_str  += '<option value="Outubro a fevereiro">Outubro a fevereiro</option>';
+            pocadeflorao_options_str  += '<option value="Outubro a janeiro; Abril a maio">Outubro a janeiro; Abril a maio</option>';
+            pocadeflorao_options_str  += '<option value="Setembro">Setembro</option>';
+            pocadeflorao_options_str  += '<option value="Setembro a Dezembro">Setembro a Dezembro</option>';
+            pocadeflorao_options_str  += '<option value="Setembro a dezembro">Setembro a dezembro</option>';
+            pocadeflorao_options_str  += '<option value="Setembro a março">Setembro a março</option>';
+            pocadeflorao_options_str  += '<option value="Setembro a novembro">Setembro a novembro</option>';
+            sel_pocadeflorao.innerHTML = pocadeflorao_options_str;
+            div_pocadeflorao.appendChild(sel_pocadeflorao);
+            var lab_pocadeflorao = document.createElement('div');
+            lab_pocadeflorao.innerHTML = 'Época de floração';
+            lab_pocadeflorao.className = 'filterlabel';
+            div_pocadeflorao.appendChild(lab_pocadeflorao);
+            var reset_pocadeflorao = document.createElement('div');
+            reset_pocadeflorao.innerHTML = 'clear filter';
+            reset_pocadeflorao.className = 'filterlabel';
+            reset_pocadeflorao.onclick = function() {
+                var options = document.getElementById("sel_pocadeflorao").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_pocadeflorao.appendChild(reset_pocadeflorao);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Necessitapoda = document.createElement('div');
+            div_Necessitapoda.id = "div_Necessitapoda";
+            div_Necessitapoda.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Necessitapoda);
+            sel_Necessitapoda = document.createElement('select');
+            sel_Necessitapoda.multiple = true;
+            sel_Necessitapoda.size = 3;
+            sel_Necessitapoda.id = "sel_Necessitapoda";
+            var Necessitapoda_options_str = "<option value='' unselected></option>";
+            sel_Necessitapoda.onchange = function(){filterFunc()};
+            Necessitapoda_options_str  += '<option value="NULL">NULL</option>';
+            Necessitapoda_options_str  += '<option value="N/A">N/A</option>';
+            Necessitapoda_options_str  += '<option value="Não">Não</option>';
+            sel_Necessitapoda.innerHTML = Necessitapoda_options_str;
+            div_Necessitapoda.appendChild(sel_Necessitapoda);
+            var lab_Necessitapoda = document.createElement('div');
+            lab_Necessitapoda.innerHTML = 'Necessita poda';
+            lab_Necessitapoda.className = 'filterlabel';
+            div_Necessitapoda.appendChild(lab_Necessitapoda);
+            var reset_Necessitapoda = document.createElement('div');
+            reset_Necessitapoda.innerHTML = 'clear filter';
+            reset_Necessitapoda.className = 'filterlabel';
+            reset_Necessitapoda.onclick = function() {
+                var options = document.getElementById("sel_Necessitapoda").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Necessitapoda.appendChild(reset_Necessitapoda);
+            document.getElementById("menu").appendChild(
+                document.createElement("div"));
+            var div_Manejoproposto = document.createElement('div');
+            div_Manejoproposto.id = "div_Manejoproposto";
+            div_Manejoproposto.className= "filterselect";
+            document.getElementById("menu").appendChild(div_Manejoproposto);
+            sel_Manejoproposto = document.createElement('select');
+            sel_Manejoproposto.multiple = true;
+            sel_Manejoproposto.size = 5;
+            sel_Manejoproposto.id = "sel_Manejoproposto";
+            var Manejoproposto_options_str = "<option value='' unselected></option>";
+            sel_Manejoproposto.onchange = function(){filterFunc()};
+            Manejoproposto_options_str  += '<option value="NULL">NULL</option>';
+            Manejoproposto_options_str  += '<option value="Controle de insetos e adubação">Controle de insetos e adubação</option>';
+            Manejoproposto_options_str  += '<option value="N/A">N/A</option>';
+            Manejoproposto_options_str  += '<option value="Presença de erva de passarinho">Presença de erva de passarinho</option>';
+            Manejoproposto_options_str  += '<option value="Retiradas de ervas de passarinho">Retiradas de ervas de passarinho</option>';
+            sel_Manejoproposto.innerHTML = Manejoproposto_options_str;
+            div_Manejoproposto.appendChild(sel_Manejoproposto);
+            var lab_Manejoproposto = document.createElement('div');
+            lab_Manejoproposto.innerHTML = 'Manejo proposto';
+            lab_Manejoproposto.className = 'filterlabel';
+            div_Manejoproposto.appendChild(lab_Manejoproposto);
+            var reset_Manejoproposto = document.createElement('div');
+            reset_Manejoproposto.innerHTML = 'clear filter';
+            reset_Manejoproposto.className = 'filterlabel';
+            reset_Manejoproposto.onclick = function() {
+                var options = document.getElementById("sel_Manejoproposto").options;
+                for (var i=0; i < options.length; i++) {
+                    options[i].selected = false;
+                }
+                filterFunc();
+            };
+            div_Manejoproposto.appendChild(reset_Manejoproposto);
+        </script>
+    </body>
+</html>
